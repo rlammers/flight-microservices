@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "DO5nU8dkFJA=",
+  "success": true,
+  "projectFilePath": "E:\\Projects\\flight-microservices\\FlightProducerService\\FlightProducerService\\FlightProducerService.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Roger\\.nuget\\packages\\confluent.kafka\\2.12.0\\confluent.kafka.2.12.0.nupkg.sha512",
+    "C:\\Users\\Roger\\.nuget\\packages\\librdkafka.redist\\2.12.0\\librdkafka.redist.2.12.0.nupkg.sha512"
+  ],
+  "logs": []
+}

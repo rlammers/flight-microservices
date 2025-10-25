@@ -1,0 +1,41 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightConsumerService", "FlightConsumerService\FlightConsumerService.csproj", "{4F8A7C99-6632-F710-103E-BB86A8D0F54C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightGraphQLService", "FlightGraphQLService\FlightGraphQLService.csproj", "{DE1BEC28-8A94-3967-6556-0204219E575A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FlightProducerService", "FlightProducerService", "{66B49E5E-E46E-3659-9749-6BE407408F01}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightProducerService", "FlightProducerService\FlightProducerService\FlightProducerService.csproj", "{4CB222FB-4324-40D7-9F6F-E53162BE8EDF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4F8A7C99-6632-F710-103E-BB86A8D0F54C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F8A7C99-6632-F710-103E-BB86A8D0F54C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F8A7C99-6632-F710-103E-BB86A8D0F54C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F8A7C99-6632-F710-103E-BB86A8D0F54C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE1BEC28-8A94-3967-6556-0204219E575A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE1BEC28-8A94-3967-6556-0204219E575A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE1BEC28-8A94-3967-6556-0204219E575A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE1BEC28-8A94-3967-6556-0204219E575A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4CB222FB-4324-40D7-9F6F-E53162BE8EDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CB222FB-4324-40D7-9F6F-E53162BE8EDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4CB222FB-4324-40D7-9F6F-E53162BE8EDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4CB222FB-4324-40D7-9F6F-E53162BE8EDF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4CB222FB-4324-40D7-9F6F-E53162BE8EDF} = {66B49E5E-E46E-3659-9749-6BE407408F01}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C612B650-9D7F-434B-ABF1-B4A44AD19BBA}
+	EndGlobalSection
+EndGlobal

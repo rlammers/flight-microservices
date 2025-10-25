@@ -1,0 +1,6 @@
+@FlightGraphQLService_HostAddress = http://localhost:5190
+
+GET {{FlightGraphQLService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
