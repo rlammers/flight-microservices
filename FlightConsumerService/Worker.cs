@@ -1,4 +1,7 @@
+using System.Threading.Tasks;
 using Confluent.Kafka;
+using Npgsql;
+using System.Text.Json;
 
 public class Worker : BackgroundService
 {
@@ -28,7 +31,13 @@ public class Worker : BackgroundService
             while (!stoppingToken.IsCancellationRequested)
             {
                 var result = consumer.Consume(stoppingToken);
+                var flightEvent = JsonSerializer.Deserialize<FlightEvent>(result.Message.Value);
+
                 _logger.LogInformation($"✈️ Received message: {result.Message.Value}");
+
+                _logger.LogInformation("💾 Saving to database...");
+                await SaveToDatabase(flightEvent);
+                _logger.LogInformation("Saved successfully!");
             }
         }
         catch (OperationCanceledException)
@@ -40,4 +49,22 @@ public class Worker : BackgroundService
             consumer.Close();
         }
     }
+
+    private async Task SaveToDatabase(FlightEvent flightEvent)
+    {
+        var connectionString = "Host=postgres;Username=flight;Password=flight;Database=flightdb";
+
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        using var command = new NpgsqlCommand("INSERT INTO flight_data (flight_id, status, timestamp) VALUES (@id, @status, @time)", connection);
+
+        command.Parameters.AddWithValue("id", flightEvent.FlightId);
+        command.Parameters.AddWithValue("status", flightEvent.Status);
+        command.Parameters.AddWithValue("time", flightEvent.Time);
+
+        await command.ExecuteNonQueryAsync();
+    }
+
+    public record FlightEvent(Guid FlightId, string Status, DateTime Time);
 }
