@@ -69,7 +69,7 @@ services:
         condition: service_started
 
   # GraphQL API
-  graphql:
+  flightgraphql:
     build: ./FlightGraphQLService
     ports:
       - "5000:80"
