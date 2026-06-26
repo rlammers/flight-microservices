@@ -68,9 +68,17 @@ public class FlightsController : ControllerBase
                 return BadRequest(new { error = "pageSize must be between 1 and 100" });
             }
 
+            var statusForLog = string.IsNullOrEmpty(status)
+                ? "none"
+                : status
+                    .Replace("\r", " ")
+                    .Replace("\n", " ")
+                    .Replace("\u2028", " ")
+                    .Replace("\u2029", " ");
+
             _logger.LogInformation(
                 "Retrieving flights: pageNumber={PageNumber}, pageSize={PageSize}, status={Status}",
-                pageNumber, pageSize, status ?? "none");
+                pageNumber, pageSize, statusForLog);
 
             var result = await _flightStateService.GetFlightsAsync(pageNumber, pageSize, status);
 
