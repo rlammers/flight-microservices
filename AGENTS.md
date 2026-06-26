@@ -184,14 +184,11 @@ flight-microservices/
 │   ├── appsettings.Development.json # Dev settings
 │   └── Properties/                 # Project properties
 │
-├── FlightProducerService/          # Producer microservice (folder)
-│   └── FlightProducerService/      # Actual project (nested)
-│       ├── FlightProducerService.csproj
-│       ├── Program.cs              # Service setup
-│       ├── Dockerfile              # Docker build config
-│       ├── appsettings.json        # Production settings
-│       ├── appsettings.Development.json # Dev settings
-│       └── Properties/             # Project properties
+├── FlightProducerService/          # Producer microservice
+│   ├── FlightProducerService.csproj
+│   ├── Program.cs                  # Service setup
+│   ├── Dockerfile                  # Docker build config
+│   └── .gitignore
 │
 ├── db/                              # Database initialization
 │   └── init.sql                    # PostgreSQL schema setup
@@ -200,8 +197,6 @@ flight-microservices/
 ├── flight-microservices.sln        # Solution file (Visual Studio)
 └── README.md                       # User-facing documentation
 ```
-
-**Note**: `FlightProducerService` has a nested structure with an extra parent folder.
 
 ## Running the Application
 
@@ -220,7 +215,7 @@ Starts all services: Zookeeper, Kafka, PostgreSQL, Producer, Consumer, and Graph
 docker-compose up zookeeper kafka postgres
 
 # In separate terminals
-cd FlightProducerService/FlightProducerService && dotnet run
+cd FlightProducerService && dotnet run
 cd FlightConsumerService && dotnet run
 cd FlightGraphQLService && dotnet run
 ```
@@ -575,7 +570,7 @@ When making changes to this project, follow these patterns:
 1. Specify **which service** is being modified (Producer/Consumer/GraphQL/REST API/Dashboard)
 2. Mention whether **Docker Compose** must be rebuilt
 3. Consider **dependency order** if modifying infrastructure
-4. Check **both files** of nested Producer folder if modifying Producer
+4. Producer project files live directly under `FlightProducerService/`
 5. Remember the **event-driven principle**: Producer generates events, Consumer persists them, APIs query results
 6. For REST API changes: Update both `FlightsController.cs` and `FlightStateService.cs` as needed
 

@@ -6,9 +6,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightConsumerService", "Fl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightGraphQLService", "FlightGraphQLService\FlightGraphQLService.csproj", "{DE1BEC28-8A94-3967-6556-0204219E575A}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FlightProducerService", "FlightProducerService", "{66B49E5E-E46E-3659-9749-6BE407408F01}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightProducerService", "FlightProducerService\FlightProducerService\FlightProducerService.csproj", "{4CB222FB-4324-40D7-9F6F-E53162BE8EDF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightProducerService", "FlightProducerService\FlightProducerService.csproj", "{4CB222FB-4324-40D7-9F6F-E53162BE8EDF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightStateService", "FlightStateService\FlightStateService.csproj", "{4EC2360B-8226-410F-81D9-55F348DA0128}"
 EndProject
@@ -37,9 +35,6 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{4CB222FB-4324-40D7-9F6F-E53162BE8EDF} = {66B49E5E-E46E-3659-9749-6BE407408F01}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C612B650-9D7F-434B-ABF1-B4A44AD19BBA}
