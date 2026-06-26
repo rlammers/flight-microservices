@@ -50,8 +50,7 @@ The Operations Dashboard should eventually include:
 - ✅ Simulated flight event producer
 - ✅ Event consumer with database persistence
 - ✅ GraphQL API for data queries
-- ✅ REST API - GET /flights endpoint with filtering and pagination
-- 🔄 REST API - Additional endpoints (details, history, search, metrics)
+- ✅ REST API - List, detail, history, search, and metrics endpoints
 - 🔄 Basic React dashboard with live flight list
 
 ### Phase 2: Event-Driven Operations
@@ -98,6 +97,7 @@ This will:
 3. Build and run the Flight Producer Service (generates events every 3 seconds)
 4. Build and run the Flight Consumer Service (processes events into the database)
 5. Build and run the GraphQL Service (available at http://localhost:5000/graphql)
+6. Build and run the Flight State API (available at http://localhost:5001)
 
 All services communicate over the `flightnet` Docker network.
 
@@ -116,6 +116,7 @@ If you prefer to run services locally:
    cd FlightProducerService && dotnet run
    cd FlightConsumerService && dotnet run
    cd FlightGraphQLService && dotnet run
+   cd FlightStateService && dotnet run
    ```
 
 Ensure the services can connect to the containerized infrastructure (Kafka on localhost:29092, PostgreSQL on localhost:5432).
@@ -125,9 +126,14 @@ Ensure the services can connect to the containerized infrastructure (Kafka on lo
 - **Flight Event Producer**: Publishes simulated flight events to the `flight-events` Kafka topic every 3 seconds
 - **Flight Event Consumer**: Subscribes to `flight-events` topic and persists events to PostgreSQL
 - **GraphQL API**: Query flight data at `http://localhost:5000/graphql` (read-only queries)
-- **Flight State API** (NEW): REST API at `http://localhost:5001` for operational queries with filtering and pagination
+- **Flight State API**: REST API at `http://localhost:5001` for operational queries
   - `GET /api/flights` - List all flights with pagination and status filtering
-  - Additional endpoints (flight details, history, search) coming in Phase 1 Phase 2
+  - `GET /api/flights/{id}` - Flight details with current status and event count
+  - `GET /api/flights/{id}/history` - Event timeline in chronological order
+  - `GET /api/flights/search` - Search by status and/or partial flight ID
+  - `GET /api/metrics` - Operational summary metrics
+  - Swagger UI available in Development at `http://localhost:5001/swagger`
+  - Sample requests in `FlightStateService/FlightStateService.http`
 - **React Dashboard** (planned): Live operations UI with real-time updates
 
 ## Database
