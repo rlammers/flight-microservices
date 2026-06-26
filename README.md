@@ -19,10 +19,10 @@ The system follows an event-driven architecture where flight events are the sour
 - **Flight Event Producer Service**: Simulates flight events and publishes to Kafka
 - **Flight Event Consumer Service**: Consumes events from Kafka and persists to PostgreSQL
 - **Flight GraphQL Service**: API for querying flight data (http://localhost:5000/graphql)
+- **Flight State API**: REST API for operational queries (http://localhost:5001/swagger)
 
 **Planned Components:**
 
-- **Flight State API**: REST API for operational queries (flight status, history, search)
 - **React Operations Dashboard**: Live monitoring UI with real-time updates
 
 ## Prerequisites
@@ -45,12 +45,13 @@ The Operations Dashboard should eventually include:
 
 ## Development Roadmap
 
-### Phase 1: Event Streaming Foundation (Current)
+### Phase 1: Event Streaming Foundation (In Progress)
 
 - ✅ Simulated flight event producer
 - ✅ Event consumer with database persistence
 - ✅ GraphQL API for data queries
-- 🔄 REST API for common flight queries
+- ✅ REST API - GET /flights endpoint with filtering and pagination
+- 🔄 REST API - Additional endpoints (details, history, search, metrics)
 - 🔄 Basic React dashboard with live flight list
 
 ### Phase 2: Event-Driven Operations
@@ -123,8 +124,10 @@ Ensure the services can connect to the containerized infrastructure (Kafka on lo
 
 - **Flight Event Producer**: Publishes simulated flight events to the `flight-events` Kafka topic every 3 seconds
 - **Flight Event Consumer**: Subscribes to `flight-events` topic and persists events to PostgreSQL
-- **GraphQL API**: Query flight data at `http://localhost:5000/graphql` (currently read-only)
-- **Flight State API** (planned): REST API for operational queries (status, history, search)
+- **GraphQL API**: Query flight data at `http://localhost:5000/graphql` (read-only queries)
+- **Flight State API** (NEW): REST API at `http://localhost:5001` for operational queries with filtering and pagination
+  - `GET /api/flights` - List all flights with pagination and status filtering
+  - Additional endpoints (flight details, history, search) coming in Phase 1 Phase 2
 - **React Dashboard** (planned): Live operations UI with real-time updates
 
 ## Database
