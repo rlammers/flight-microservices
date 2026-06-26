@@ -45,7 +45,7 @@ Producer (generates events)
   → Consumer (processes events)
   → PostgreSQL (stores data)
   ├─ GraphQL API (queries data)
-  └─ REST State API (planned - operational queries)
+  └─ REST State API (operational queries)
      ← React Dashboard (planned - live UI updates)
 ```
 
@@ -85,26 +85,27 @@ Producer (generates events)
   - `FlightDbContext.cs` - Entity Framework DbContext
   - `FlightGraphQLService.http` - HTTP client test file for development
 
-#### 4. **Flight State API** (`FlightStateService/` - Phase 1 In Progress)
+#### 4. **Flight State API** (`FlightStateService/`)
 
 - **Type**: ASP.NET Core REST API
 - **Purpose**: Provides RESTful endpoints for operational flight queries
 - **Technology**: ASP.NET Core, Entity Framework Core
 - **Port**: `5001` (externally accessible)
-- **Scope**: Phase 1 - Operational REST queries with filtering and pagination
-- **Implemented Endpoints**:
+- **Scope**: Phase 1 - Operational REST queries with filtering, search, and metrics
+- **Endpoints**:
   - `GET /api/flights` - List all flights with pagination and status filtering
-- **Planned Endpoints**:
-  - `GET /api/flights/{id}` - Flight details with status
-  - `GET /api/flights/{id}/history` - Event timeline
-  - `GET /api/flights/search` - Search by airport, airline, status
-  - `GET /api/metrics` - Operational summary metrics
+  - `GET /api/flights/{id}` - Flight details with current status and event count
+  - `GET /api/flights/{id}/history` - Event timeline in chronological order
+  - `GET /api/flights/search` - Search by status and/or partial flight ID (requires at least one filter)
+  - `GET /api/metrics` - Operational summary metrics (totals, status breakdown, delayed count)
 - **Key Files**:
   - `Program.cs` - ASP.NET configuration
-  - `FlightsController.cs` - REST API endpoints
+  - `FlightsController.cs` - Flight list, detail, history, and search endpoints
+  - `MetricsController.cs` - Operational metrics endpoint
   - `FlightStateService.cs` - Business logic for flight state queries
   - `Dtos.cs` - Request/response data transfer objects
   - `FlightDbContext.cs` - Entity Framework DbContext
+  - `FlightStateService.http` - HTTP client test file for development
 
 #### 5. **React Operations Dashboard** (Planned - Phase 1/2)
 
@@ -172,13 +173,15 @@ flight-microservices/
 │   ├── appsettings.Development.json # Dev settings
 │   └── Properties/                 # Project properties
 │
-├── FlightStateService/             # REST API microservice (Phase 1)
+├── FlightStateService/             # REST API microservice
 │   ├── FlightStateService.csproj
 │   ├── Program.cs                  # ASP.NET setup
-│   ├── FlightsController.cs        # REST API endpoints
+│   ├── FlightsController.cs        # Flight REST endpoints
+│   ├── MetricsController.cs        # Metrics REST endpoint
 │   ├── FlightStateService.cs       # Business logic
 │   ├── Dtos.cs                     # Data transfer objects
 │   ├── FlightDbContext.cs          # EF Core DbContext
+│   ├── FlightStateService.http     # HTTP test file
 │   ├── Dockerfile                  # Docker build config
 │   ├── appsettings.json            # Production settings
 │   ├── appsettings.Development.json # Dev settings
@@ -206,7 +209,7 @@ flight-microservices/
 docker-compose up
 ```
 
-Starts all services: Zookeeper, Kafka, PostgreSQL, Producer, Consumer, and GraphQL API.
+Starts all services: Zookeeper, Kafka, PostgreSQL, Producer, Consumer, GraphQL API, and Flight State API.
 
 ### Individual Service Runs
 
@@ -218,6 +221,7 @@ docker-compose up zookeeper kafka postgres
 cd FlightProducerService && dotnet run
 cd FlightConsumerService && dotnet run
 cd FlightGraphQLService && dotnet run
+cd FlightStateService && dotnet run
 ```
 
 ### Important Network Info
@@ -326,7 +330,7 @@ Initialized from `db/init.sql`:
 
 - **`.csproj`**: Project configuration (NuGet packages, build settings)
 - **`Dockerfile`**: Container build instructions for each service
-- **`.http`**: VS Code REST Client files for testing endpoints (GraphQL service uses this)
+- **`.http`**: VS Code REST Client files for testing endpoints (`FlightGraphQLService.http`, `FlightStateService.http`)
 - **`.json`**: Configuration files
 
 ## Design Principles
@@ -356,7 +360,7 @@ Each service has a single, well-defined responsibility:
 - **Producer**: Generate events only - doesn't query or transform
 - **Consumer**: Process events into storage - doesn't serve queries
 - **GraphQL Service**: Query data only - doesn't modify state
-- **REST API** (planned): Operational queries - focused on common access patterns
+- **REST API**: Operational queries - focused on common access patterns
 - **Dashboard** (planned): User experience - consumes APIs only
 
 ### Loose Coupling
@@ -386,7 +390,7 @@ Services do not call each other's APIs directly. Each service owns its data cont
 2. **Consumer** ← Kafka: Subscribe to `flight-events` topic (pull model)
 3. **Consumer** → Database: Persist events to PostgreSQL
 4. **GraphQL** ← Database: Query via Entity Framework
-5. **REST API** (planned) ← Database: Query via Entity Framework
+5. **REST API** ← Database: Query via Entity Framework
 6. **Dashboard** (planned) ← APIs: Real-time updates via WebSocket/REST
 
 ### Kafka Configuration
@@ -555,6 +559,7 @@ When making changes to this project, follow these patterns:
 | Consumer logic     | `FlightConsumerService/Worker.cs`          |
 | GraphQL queries    | `FlightGraphQLService/Query.cs`            |
 | REST API endpoints | `FlightStateService/FlightsController.cs`  |
+| REST metrics       | `FlightStateService/MetricsController.cs`  |
 | Flight state logic | `FlightStateService/FlightStateService.cs` |
 | Database models    | `FlightGraphQLService/FlightDbContext.cs`  |
 | Producer events    | `FlightProducerService/Program.cs`         |
@@ -572,7 +577,7 @@ When making changes to this project, follow these patterns:
 3. Consider **dependency order** if modifying infrastructure
 4. Producer project files live directly under `FlightProducerService/`
 5. Remember the **event-driven principle**: Producer generates events, Consumer persists them, APIs query results
-6. For REST API changes: Update both `FlightsController.cs` and `FlightStateService.cs` as needed
+6. For REST API changes: Update `FlightsController.cs` / `MetricsController.cs` and `FlightStateService.cs` as needed
 
 ### When Investigating Issues
 
@@ -596,7 +601,8 @@ When making changes to this project, follow these patterns:
 - Consumer can be scaled horizontally with consumer groups
 - Producer rate is currently hardcoded (3 seconds)
 - GraphQL service is read-only (no mutations defined)
-- REST API endpoints planned: flight details, history, search, metrics
+- REST API Phase 1 endpoints complete: list, details, history, search, metrics
+- Search is limited to status and flight ID until schema adds airport/airline fields
 - REST API should implement query caching for common queries when added
 - Dashboard (planned) should use WebSocket for real-time updates
 - Add new topics/queues without disrupting existing flow
@@ -660,4 +666,4 @@ The finished project serves as a portfolio piece showcasing practical production
 ---
 
 **Last Updated**: 2026-06-26  
-**Project State**: Foundation complete (3 backend services), Phase 1 in development - GET /flights endpoint implemented
+**Project State**: Foundation complete (4 backend services), Phase 1 REST API complete — React dashboard next

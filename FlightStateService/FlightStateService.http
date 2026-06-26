@@ -1,0 +1,22 @@
+@FlightStateService_HostAddress = http://localhost:5001
+
+### List flights (paginated)
+GET {{FlightStateService_HostAddress}}/api/flights?pageNumber=1&pageSize=10
+
+### List flights filtered by status
+GET {{FlightStateService_HostAddress}}/api/flights?status=departed
+
+### Search flights by status
+GET {{FlightStateService_HostAddress}}/api/flights/search?status=depart
+
+### Search flights by partial flight ID
+GET {{FlightStateService_HostAddress}}/api/flights/search?flightId=a1b2c3d4
+
+### Get flight details (replace with a real flight ID from list response)
+GET {{FlightStateService_HostAddress}}/api/flights/00000000-0000-0000-0000-000000000000
+
+### Get flight event history
+GET {{FlightStateService_HostAddress}}/api/flights/00000000-0000-0000-0000-000000000000/history
+
+### Operational metrics
+GET {{FlightStateService_HostAddress}}/api/metrics

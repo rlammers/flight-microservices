@@ -23,29 +23,15 @@ public class FlightsController : ControllerBase
     /// <remarks>
     /// Returns the current status of flights based on the most recent event for each flight.
     /// Results are sorted by most recent status update first.
-    /// 
+    ///
     /// **Filtering:**
     /// - `status`: Filter by flight status (e.g., "boarding", "departed", "arrived", "delayed").
     ///   The search is case-insensitive and matches partial strings.
-    /// 
+    ///
     /// **Pagination:**
     /// - `pageNumber`: Page number (1-based). Defaults to 1.
     /// - `pageSize`: Number of flights per page (1-100). Defaults to 10.
-    /// 
-    /// **Example requests:**
-    /// - `/api/flights` - Get first 10 flights
-    /// - `/api/flights?pageNumber=2` - Get second page
-    /// - `/api/flights?pageSize=20` - Get 20 flights per page
-    /// - `/api/flights?status=departed` - Get only departed flights
-    /// - `/api/flights?status=arrived&pageSize=25` - Get 25 arrived flights per page
     /// </remarks>
-    /// <param name="pageNumber">Page number (1-based). Defaults to 1.</param>
-    /// <param name="pageSize">Number of items per page (1-100). Defaults to 10.</param>
-    /// <param name="status">Optional filter by flight status (case-insensitive partial match).</param>
-    /// <returns>Paginated list of flights with their current status.</returns>
-    /// <response code="200">Successfully retrieved flights.</response>
-    /// <response code="400">Invalid pagination parameters.</response>
-    /// <response code="500">Internal server error.</response>
     [HttpGet]
     [ProducesResponseType(typeof(PaginatedFlightsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -57,28 +43,15 @@ public class FlightsController : ControllerBase
     {
         try
         {
-            // Validate pagination parameters
-            if (pageNumber < 1)
+            var validationError = ValidatePagination(pageNumber, pageSize);
+            if (validationError is not null)
             {
-                return BadRequest(new { error = "pageNumber must be greater than 0" });
+                return BadRequest(new { error = validationError });
             }
-
-            if (pageSize < 1 || pageSize > 100)
-            {
-                return BadRequest(new { error = "pageSize must be between 1 and 100" });
-            }
-
-            var statusForLog = string.IsNullOrEmpty(status)
-                ? "none"
-                : status
-                    .Replace("\r", " ")
-                    .Replace("\n", " ")
-                    .Replace("\u2028", " ")
-                    .Replace("\u2029", " ");
 
             _logger.LogInformation(
                 "Retrieving flights: pageNumber={PageNumber}, pageSize={PageSize}, status={Status}",
-                pageNumber, pageSize, statusForLog);
+                pageNumber, pageSize, SanitizeForLog(status));
 
             var result = await _flightStateService.GetFlightsAsync(pageNumber, pageSize, status);
 
@@ -93,5 +66,138 @@ public class FlightsController : ControllerBase
             _logger.LogError(ex, "Error retrieving flights");
             return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Internal server error" });
         }
+    }
+
+    /// <summary>
+    /// Search flights by status and/or flight ID.
+    /// </summary>
+    /// <remarks>
+    /// Search is case-insensitive. Status matches partial strings.
+    /// Flight ID matches any substring of the UUID (e.g., first 8 characters).
+    /// At least one of `status` or `flightId` should be provided.
+    /// </remarks>
+    [HttpGet("search")]
+    [ProducesResponseType(typeof(PaginatedFlightsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<PaginatedFlightsResponse>> SearchFlights(
+        [FromQuery] string? status = null,
+        [FromQuery] string? flightId = null,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(status) && string.IsNullOrWhiteSpace(flightId))
+            {
+                return BadRequest(new { error = "At least one of status or flightId is required" });
+            }
+
+            var validationError = ValidatePagination(pageNumber, pageSize);
+            if (validationError is not null)
+            {
+                return BadRequest(new { error = validationError });
+            }
+
+            _logger.LogInformation(
+                "Searching flights: status={Status}, flightId={FlightId}, pageNumber={PageNumber}, pageSize={PageSize}",
+                SanitizeForLog(status), SanitizeForLog(flightId), pageNumber, pageSize);
+
+            var result = await _flightStateService.SearchFlightsAsync(status, flightId, pageNumber, pageSize);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching flights");
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Internal server error" });
+        }
+    }
+
+    /// <summary>
+    /// Get current status and details for a single flight.
+    /// </summary>
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(FlightDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<FlightDetailDto>> GetFlightById(Guid id)
+    {
+        try
+        {
+            _logger.LogInformation("Retrieving flight {FlightId}", id);
+
+            var flight = await _flightStateService.GetFlightByIdAsync(id);
+            if (flight is null)
+            {
+                return NotFound(new { error = $"Flight {id} not found" });
+            }
+
+            return Ok(flight);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving flight {FlightId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Internal server error" });
+        }
+    }
+
+    /// <summary>
+    /// Get the event timeline for a flight.
+    /// </summary>
+    /// <remarks>
+    /// Returns all events for the flight in chronological order (oldest first).
+    /// </remarks>
+    [HttpGet("{id:guid}/history")]
+    [ProducesResponseType(typeof(FlightHistoryResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<FlightHistoryResponse>> GetFlightHistory(Guid id)
+    {
+        try
+        {
+            _logger.LogInformation("Retrieving history for flight {FlightId}", id);
+
+            var history = await _flightStateService.GetFlightHistoryAsync(id);
+            if (history is null)
+            {
+                return NotFound(new { error = $"Flight {id} not found" });
+            }
+
+            return Ok(history);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving history for flight {FlightId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Internal server error" });
+        }
+    }
+
+    private static string? ValidatePagination(int pageNumber, int pageSize)
+    {
+        if (pageNumber < 1)
+        {
+            return "pageNumber must be greater than 0";
+        }
+
+        if (pageSize < 1 || pageSize > 100)
+        {
+            return "pageSize must be between 1 and 100";
+        }
+
+        return null;
+    }
+
+    private static string SanitizeForLog(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return "none";
+        }
+
+        return value
+            .Replace("\r", " ")
+            .Replace("\n", " ")
+            .Replace("\u2028", " ")
+            .Replace("\u2029", " ");
     }
 }
