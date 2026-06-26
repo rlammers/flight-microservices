@@ -78,6 +78,18 @@ services:
     networks:
       - flightnet
 
+  # Flight State API (REST)
+  flightstate:
+    build: ./FlightStateService
+    ports:
+      - "5001:80"
+    depends_on:
+      - postgres
+    networks:
+      - flightnet
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+
 volumes:
   pgdata:
 

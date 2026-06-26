@@ -78,28 +78,35 @@ Producer (generates events)
 - **Technology**: ASP.NET Core, Entity Framework Core, Hot Chocolate (GraphQL library)
 - **Port**: `5000` (externally accessible)
 - **GraphQL Endpoint**: `http://localhost:5000/graphql`
-- **Scope**: Phase 1 (current) - Read-only graph queries
+- **Scope**: Phase 1 - Read-only graph queries
 - **Key Files**:
   - `Program.cs` - ASP.NET configuration
   - `Query.cs` - GraphQL query definitions
   - `FlightDbContext.cs` - Entity Framework DbContext
   - `FlightGraphQLService.http` - HTTP client test file for development
 
-#### 4. **Flight State API** (`FlightStateService/` - Planned)
+#### 4. **Flight State API** (`FlightStateService/` - Phase 1 In Progress)
 
 - **Type**: ASP.NET Core REST API
 - **Purpose**: Provides RESTful endpoints for operational flight queries
 - **Technology**: ASP.NET Core, Entity Framework Core
-- **Port**: `5001` (planned)
-- **Scope**: Phase 1/2 - Flight status, history, search, filtering
+- **Port**: `5001` (externally accessible)
+- **Scope**: Phase 1 - Operational REST queries with filtering and pagination
+- **Implemented Endpoints**:
+  - `GET /api/flights` - List all flights with pagination and status filtering
 - **Planned Endpoints**:
-  - `GET /flights` - List all flights with optional filtering
-  - `GET /flights/{id}` - Flight details with status
-  - `GET /flights/{id}/history` - Event timeline
-  - `GET /flights/search` - Search by airport, airline, status
-  - `GET /metrics` - Operational summary metrics
+  - `GET /api/flights/{id}` - Flight details with status
+  - `GET /api/flights/{id}/history` - Event timeline
+  - `GET /api/flights/search` - Search by airport, airline, status
+  - `GET /api/metrics` - Operational summary metrics
+- **Key Files**:
+  - `Program.cs` - ASP.NET configuration
+  - `FlightsController.cs` - REST API endpoints
+  - `FlightStateService.cs` - Business logic for flight state queries
+  - `Dtos.cs` - Request/response data transfer objects
+  - `FlightDbContext.cs` - Entity Framework DbContext
 
-#### 5. **React Operations Dashboard** (Planned)
+#### 5. **React Operations Dashboard** (Planned - Phase 1/2)
 
 - **Type**: React Single-Page Application
 - **Purpose**: Live operations dashboard UI
@@ -165,6 +172,18 @@ flight-microservices/
 │   ├── appsettings.Development.json # Dev settings
 │   └── Properties/                 # Project properties
 │
+├── FlightStateService/             # REST API microservice (Phase 1)
+│   ├── FlightStateService.csproj
+│   ├── Program.cs                  # ASP.NET setup
+│   ├── FlightsController.cs        # REST API endpoints
+│   ├── FlightStateService.cs       # Business logic
+│   ├── Dtos.cs                     # Data transfer objects
+│   ├── FlightDbContext.cs          # EF Core DbContext
+│   ├── Dockerfile                  # Docker build config
+│   ├── appsettings.json            # Production settings
+│   ├── appsettings.Development.json # Dev settings
+│   └── Properties/                 # Project properties
+│
 ├── FlightProducerService/          # Producer microservice (folder)
 │   └── FlightProducerService/      # Actual project (nested)
 │       ├── FlightProducerService.csproj
@@ -213,6 +232,8 @@ cd FlightGraphQLService && dotnet run
 - **Host Kafka**: `localhost:29092`
 - **PostgreSQL (internal)**: `postgres:5432`
 - **PostgreSQL (host)**: `localhost:5432`
+- **GraphQL API**: `http://localhost:5000/graphql`
+- **Flight State API**: `http://localhost:5001`
 
 ## Technology Stack
 
@@ -320,12 +341,14 @@ Initialized from `db/init.sql`:
 The project treats events as the source of truth rather than storing only the latest flight status.
 
 **Key Concepts:**
+
 - **Flight Events**: Immutable records of what happened (departure, delay, arrival, etc.)
 - **Current State**: Derived from replaying events up to the present time
 - **Audit Trail**: Complete history available through events
 - **Event Replay**: Ability to reconstruct state at any point in time
 
 **Benefits:**
+
 - Complete audit trail of all changes
 - Can answer historical questions (what was the status at 2pm?)
 - Enables temporal analysis and trend detection
@@ -334,6 +357,7 @@ The project treats events as the source of truth rather than storing only the la
 ### Microservice Boundaries
 
 Each service has a single, well-defined responsibility:
+
 - **Producer**: Generate events only - doesn't query or transform
 - **Consumer**: Process events into storage - doesn't serve queries
 - **GraphQL Service**: Query data only - doesn't modify state
@@ -343,6 +367,7 @@ Each service has a single, well-defined responsibility:
 ### Loose Coupling
 
 Services communicate through:
+
 - **Kafka Topics**: Asynchronous, event-based messaging (Producer ↔ Consumer)
 - **Shared Database**: Read-only access from query services (Consumer → queries)
 - **REST/GraphQL APIs**: Client communication (Dashboard → APIs)
@@ -393,7 +418,7 @@ When troubleshooting failures, consider this startup order:
 4. Producer (connects to Kafka)
 5. Consumer (connects to Kafka and PostgreSQL)
 6. GraphQL Service (connects to PostgreSQL)
-7. Flight State API (planned - connects to PostgreSQL)
+7. Flight State API (connects to PostgreSQL)
 8. React Dashboard (planned - connects to APIs)
 
 ### Error Handling Patterns
@@ -409,37 +434,44 @@ When troubleshooting failures, consider this startup order:
 When implementing features, follow these principles:
 
 ### Keep Services Loosely Coupled
+
 - Each service has a single responsibility
 - Services communicate through Kafka or read-only database access
 - Avoid direct service-to-service API calls
 
 ### Prefer Small, Focused Commits
+
 - One feature or fix per commit
 - Clear commit messages aid code review
 - History should be easy to follow
 
 ### Avoid Unnecessary Complexity
+
 - Simple, readable code > clever solutions
 - YAGNI: You aren't gonna need it
 - Prefer explicit over implicit
 
 ### Build Incrementally
+
 - Complete phases before starting new ones
 - Get feedback before building everything
 - Ship small, valuable increments
 
 ### Document Architectural Decisions
+
 - Use comments for non-obvious choices
 - Record why decisions were made
 - Consider future maintainers
 
 ### Keep APIs RESTful (and Easy to Consume)
+
 - Consistent naming and patterns
 - Clear resource hierarchies
 - Proper HTTP semantics
 - Good error messages
 
 ### Optimize for Readability
+
 - Maintainability is a long-term priority
 - New developers should understand code quickly
 - Consistency aids comprehension
@@ -523,16 +555,18 @@ When making changes to this project, follow these patterns:
 
 ## Key Files for Different Tasks
 
-| Task               | Primary File                              |
-| ------------------ | ----------------------------------------- |
-| Consumer logic     | `FlightConsumerService/Worker.cs`         |
-| GraphQL queries    | `FlightGraphQLService/Query.cs`           |
-| Database models    | `FlightGraphQLService/FlightDbContext.cs` |
-| Producer events    | `FlightProducerService/Program.cs`        |
-| Database schema    | `db/init.sql`                             |
-| Docker setup       | `docker-compose.yml`                      |
-| Service config     | `appsettings.json` (each service)         |
-| Connection strings | `appsettings.json` (each service)         |
+| Task               | Primary File                               |
+| ------------------ | ------------------------------------------ |
+| Consumer logic     | `FlightConsumerService/Worker.cs`          |
+| GraphQL queries    | `FlightGraphQLService/Query.cs`            |
+| REST API endpoints | `FlightStateService/FlightsController.cs`  |
+| Flight state logic | `FlightStateService/FlightStateService.cs` |
+| Database models    | `FlightGraphQLService/FlightDbContext.cs`  |
+| Producer events    | `FlightProducerService/Program.cs`         |
+| Database schema    | `db/init.sql`                              |
+| Docker setup       | `docker-compose.yml`                       |
+| Service config     | `appsettings.json` (each service)          |
+| Connection strings | `appsettings.json` (each service)          |
 
 ## Notes for Agents
 
@@ -543,6 +577,7 @@ When making changes to this project, follow these patterns:
 3. Consider **dependency order** if modifying infrastructure
 4. Check **both files** of nested Producer folder if modifying Producer
 5. Remember the **event-driven principle**: Producer generates events, Consumer persists them, APIs query results
+6. For REST API changes: Update both `FlightsController.cs` and `FlightStateService.cs` as needed
 
 ### When Investigating Issues
 
@@ -558,14 +593,16 @@ When making changes to this project, follow these patterns:
 2. Database pool size in appsettings may need tuning under load
 3. Producer publishes every 3 seconds (not configurable currently)
 4. GraphQL endpoint not cached (direct DB queries)
-5. REST API should implement query caching when added
+5. REST API implements pagination (max 100 per page) to prevent abuse
+6. Query performance: Flight status query uses grouping by FlightId - may benefit from materialized view at scale
 
 ### When Extending
 
 - Consumer can be scaled horizontally with consumer groups
 - Producer rate is currently hardcoded (3 seconds)
 - GraphQL service is read-only (no mutations defined)
-- REST API (planned) should focus on common operational queries
+- REST API endpoints planned: flight details, history, search, metrics
+- REST API should implement query caching for common queries when added
 - Dashboard (planned) should use WebSocket for real-time updates
 - Add new topics/queues without disrupting existing flow
 - Keep API contracts stable; version them if needed
@@ -575,6 +612,7 @@ When making changes to this project, follow these patterns:
 This project demonstrates expertise with:
 
 ### Architecture & Patterns
+
 - **Event-driven architecture**: Real-world application of async messaging
 - **Microservices**: Service decomposition with clear boundaries
 - **CQRS principles**: Separate read and write models (lightweight)
@@ -582,6 +620,7 @@ This project demonstrates expertise with:
 - **Clean architecture**: Separation of concerns across layers
 
 ### Technology Stack
+
 - **C# & .NET 8**: Modern language and framework practices
 - **ASP.NET Core**: Scalable web API framework
 - **PostgreSQL**: SQL database design and optimization
@@ -591,6 +630,7 @@ This project demonstrates expertise with:
 - **Docker & Docker Compose**: Containerization and orchestration
 
 ### Backend Engineering
+
 - **Asynchronous Processing**: Non-blocking event handling
 - **Message Brokers**: Loose coupling through pub/sub
 - **Database Design**: Normalization, indexing, relationships
@@ -598,12 +638,14 @@ This project demonstrates expertise with:
 - **Connection Management**: Pool management, transaction handling
 
 ### Real-Time Systems
+
 - **Event Streaming**: Processing continuous data flows
 - **Time-Series Data**: Handling temporal flight information
 - **State Management**: Deriving current state from events
 - **Real-Time Updates**: WebSocket communication (planned)
 
 ### DevOps & Deployment
+
 - **Containerization**: Docker for service isolation
 - **Orchestration**: Docker Compose for multi-service setup
 - **Network Configuration**: Service discovery and communication
@@ -611,6 +653,7 @@ This project demonstrates expertise with:
 - **Logging & Monitoring**: Service visibility and debugging
 
 ### Software Engineering Practices
+
 - **Clean Code**: Readable, maintainable implementation
 - **Single Responsibility**: Focused, modular design
 - **Documentation**: Clear architectural decisions
@@ -622,4 +665,4 @@ The finished project serves as a portfolio piece showcasing practical production
 ---
 
 **Last Updated**: 2026-06-26  
-**Project State**: Foundation complete (3 backend services), Phase 1 in development
+**Project State**: Foundation complete (3 backend services), Phase 1 in development - GET /flights endpoint implemented
